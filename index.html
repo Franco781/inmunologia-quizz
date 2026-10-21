@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiz: Complemento y Citoquinas</title>
+<style>
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    background: linear-gradient(135deg, #0b1220, #111827 55%, #0f172a);
+    color: #e2e8f0;
+    overflow-x: hidden;
+  }
+
+  .card {
+    width: 100%;
+    max-width: 620px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 26px 24px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, .55);
+  }
+
+  .oculto { display: none !important; }
+
+  h1 {
+    margin: 0 0 6px;
+    font-size: 1.5rem;
+    color: #60a5fa;
+  }
+
+  .subtitulo {
+    margin: 0 0 18px;
+    font-size: .95rem;
+    color: #94a3b8;
+  }
+
+  .intro-lista {
+    margin: 0 0 16px;
+    padding-left: 20px;
+    font-size: .93rem;
+    color: #cbd5e1;
+    line-height: 1.6;
+  }
+
+  .info-banco {
+    margin: 0 0 20px;
+    padding: 8px 12px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    font-size: .82rem;
+    color: #94a3b8;
+    text-align: center;
+  }
+
+  /* ---------- botones ---------- */
+  button {
+    font-family: inherit;
+    font-size: 1rem;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: background .15s, border-color .15s, transform .05s;
+  }
+
+  .btn-principal {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    background: #3b82f6;
+    color: #fff;
+    font-weight: 600;
+  }
+  .btn-principal:hover { background: #2563eb; }
+  .btn-principal:active { transform: scale(.99); }
+
+  /* ---------- barra de progreso ---------- */
+  .barra {
+    height: 8px;
+    background: #334155;
+    border-radius: 99px;
+    overflow: hidden;
+    margin-bottom: 14px;
+  }
+  .barra > div {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #3b82f6, #10b981);
+    border-radius: 99px;
+    transition: width .3s ease;
+  }
+
+  .fila-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    font-size: .82rem;
+  }
+
+  .chip {
+    background: #1e3a8a;
+    color: #93c5fd;
+    padding: 4px 10px;
+    border-radius: 99px;
+    font-weight: 600;
+    white-space: nowrap;
+    border: 1px solid #1e40af;
+  }
+
+  #contador { color: #94a3b8; font-weight: 600; }
+
+  /* ---------- pregunta ---------- */
+  #pregunta {
+    margin: 0 0 18px;
+    font-size: 1.12rem;
+    line-height: 1.45;
+    color: #f1f5f9;
+  }
+
+  #opciones { display: grid; gap: 10px; }
+
+  .opcion {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 13px 16px;
+    background: #0f172a;
+    border: 1.5px solid #334155;
+    color: #e2e8f0;
+    line-height: 1.4;
+  }
+  .opcion:hover:not(:disabled) {
+    background: #1e293b;
+    border-color: #3b82f6;
+  }
+  .opcion:disabled { cursor: default; opacity: .95; }
+
+  .opcion.correcta {
+    background: #14532d;
+    border-color: #22c55e;
+    color: #bbf7d0;
+    font-weight: 600;
+    animation: pulso-correcto .5s ease;
+  }
+  .opcion.incorrecta {
+    background: #7f1d1d;
+    border-color: #ef4444;
+    color: #fecaca;
+    animation: sacudida .45s ease;
+  }
+
+  @keyframes pulso-correcto {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.035); box-shadow: 0 0 0 6px rgba(34, 197, 94, .28); }
+    100% { transform: scale(1); }
+  }
+
+  @keyframes sacudida {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-7px); }
+    40% { transform: translateX(7px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+  }
+
+  /* ---------- pistas ---------- */
+  .btn-pista {
+    width: 100%;
+    margin-top: 14px;
+    padding: 11px 14px;
+    border: 1.5px dashed #f59e0b;
+    background: #3b2606;
+    color: #fbbf24;
+    font-weight: 600;
+    font-size: .9rem;
+  }
+  .btn-pista:hover:not(:disabled) { background: #4a2f08; }
+  .btn-pista:disabled { opacity: .55; cursor: default; }
+
+  .pista {
+    margin-top: 10px;
+    padding: 11px 14px;
+    background: #3b2606;
+    border-left: 4px solid #f59e0b;
+    border-radius: 10px;
+    font-size: .9rem;
+    line-height: 1.5;
+    color: #fcd34d;
+  }
+
+  /* ---------- feedback ---------- */
+  .feedback {
+    margin-top: 16px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: .9rem;
+    line-height: 1.5;
+  }
+  .feedback.ok {
+    background: #052e16;
+    border-left: 4px solid #22c55e;
+    color: #bbf7d0;
+  }
+  .feedback.no {
+    background: #450a0a;
+    border-left: 4px solid #ef4444;
+    color: #fecaca;
+  }
+
+  #btnSiguiente { margin-top: 16px; }
+
+  /* ---------- resultado ---------- */
+  .centrado { text-align: center; }
+  .puntaje {
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: #60a5fa;
+    margin: 10px 0 4px;
+  }
+  #mensaje {
+    font-size: 1rem;
+    color: #cbd5e1;
+    margin: 0 0 6px;
+  }
+  .detalle {
+    font-size: .87rem;
+    color: #94a3b8;
+    margin: 0 0 20px;
+  }
+  .barra-final { margin-bottom: 24px; }
+
+  /* ============================================================
+     ANIMACIONES DE CELEBRACIÓN Y ERROR
+     ============================================================ */
+  #confettiCanvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9998;
+    display: none;
+  }
+
+  .fx-x {
+    position: fixed;
+    font-size: 2.4rem;
+    pointer-events: none;
+    z-index: 9999;
+    user-select: none;
+    animation: fx-x-volar 1.25s cubic-bezier(.2, .8, .3, 1) forwards;
+    filter: drop-shadow(0 4px 6px rgba(220, 38, 38, .55));
+  }
+
+  @keyframes fx-x-volar {
+    0%   { opacity: 0; transform: translate(0, 0) scale(.3) rotate(0deg); }
+    15%  { opacity: 1; transform: translate(0, -10px) scale(1.15) rotate(-8deg); }
+    100% { opacity: 0; transform: translate(var(--dx, 0px), -140px) scale(.7) rotate(25deg); }
+  }
+
+  @media (max-width: 420px) {
+    .card { padding: 20px 16px; }
+    h1 { font-size: 1.28rem; }
+    #pregunta { font-size: 1.02rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Capa de confeti (canvas a pantalla completa) -->
+<canvas id="confettiCanvas"></canvas>
+
+<div class="card">
+
+  <!-- ===== PANTALLA DE INICIO ===== -->
+  <section id="inicio">
+    <h1>Quiz de repaso</h1>
+    <p class="subtitulo">Sistema del complemento &middot; Citoquinas</p>
+
+    <ul class="intro-lista">
+      <li>20 preguntas de opción múltiple elegidas al azar</li>
+      <li>Las preguntas no se repiten hasta que agotes el banco</li>
+      <li>Puedes pedir una pista en cada pregunta</li>
+      <li>Recibirás la explicación después de cada respuesta</li>
+      <li>Al final verás tu puntuación y podrás repetirlo</li>
+    </ul>
+
+    <p class="info-banco" id="infoBanco"></p>
+
+    <button class="btn-principal" id="btnEmpezar">Empezar quiz</button>
+  </section>
+
+  <!-- ===== PANTALLA DEL QUIZ ===== -->
+  <section id="quiz" class="oculto">
+    <div class="barra"><div id="progreso"></div></div>
+
+    <div class="fila-info">
+      <span class="chip" id="tema">Tema</span>
+      <span id="contador">Pregunta 1</span>
+    </div>
+
+    <h2 id="pregunta"></h2>
+    <div id="opciones"></div>
+
+    <button class="btn-pista" id="btnPista" type="button">💡 Ver pista</button>
+    <div id="pista" class="pista oculto"></div>
+
+    <div id="feedback" class="feedback oculto"></div>
+
+    <button class="btn-principal oculto" id="btnSiguiente">Siguiente</button>
+  </section>
+
+  <!-- ===== PANTALLA DE RESULTADO ===== -->
+  <section id="resultado" class="oculto centrado">
+    <h1>Resultado final</h1>
+    <p class="puntaje" id="puntaje">0 / 0</p>
+    <p id="mensaje"></p>
+    <p class="detalle" id="detalle"></p>
+    <div class="barra barra-final"><div id="barraFinal"></div></div>
+    <button class="btn-principal" id="btnReiniciar">Repetir quiz</button>
+  </section>
+
+</div>
+
+<script>
+/* ============================================================
+   BANCO DE PREGUNTAS (41 preguntas)
+   t = tema, q = pregunta, o = opciones, c = índice correcto,
+   e = explicación, h = pista
+   ============================================================ */
+const PREGUNTAS = [
+
+  /* ---------- SISTEMA DEL COMPLEMENTO ---------- */
+  {
+    t: "Complemento",
+    q: "¿Aproximadamente cuántas proteínas forman el sistema del complemento?",
+    o: ["10 proteínas", "30 proteínas", "100 proteínas", "300 proteínas"],
+    c: 1,
+    e: "El complemento está formado por unas 30 proteínas presentes en el plasma y en la superficie de algunas células.",
+    h: "Son bastantes más de diez, pero muchas menos de cien: se cuentan por decenas."
+  },
+  {
+    t: "Complemento",
+    q: "¿Cómo se activa la vía clásica del complemento?",
+    o: [
+      "Por complejos antígeno-anticuerpo, principalmente IgG o IgM",
+      "Por carbohidratos microbianos mediante MBL",
+      "Por superficies microbianas, sin necesidad de anticuerpos",
+      "Por la unión de C3b a los fagocitos"
+    ],
+    c: 0,
+    e: "La vía clásica se activa por complejos antígeno-anticuerpo, sobre todo de tipo IgG o IgM.",
+    h: "Es la vía que depende de la inmunidad adquirida: necesita anticuerpos ya unidos al microbio."
+  },
+  {
+    t: "Complemento",
+    q: "¿Qué vía utiliza los factores B, D, H y properdina (P)?",
+    o: ["La vía clásica", "La vía de las lectinas", "La vía alternativa", "Ninguna vía"],
+    c: 2,
+    e: "La vía alternativa se activa sobre superficies microbianas, no necesita anticuerpos y utiliza los factores B, D, H y properdina.",
+    h: "Actúa directamente sobre superficies microbianas, sin anticuerpos ni MBL; la properdina es su aliada."
+  },
+  {
+    t: "Complemento",
+    q: "Las tres vías del complemento convergen en la activación de…",
+    o: ["C1", "C3", "C5", "C9"],
+    c: 1,
+    e: "Las tres vías (clásica, alternativa y de las lectinas) convergen en la activación de C3, el componente central del sistema.",
+    h: "Es el componente más abundante del plasma y el punto donde se cruzan los tres caminos."
+  },
+  {
+    t: "Complemento",
+    q: "¿Cuál es la función principal de C3b?",
+    o: [
+      "Opsonización: facilita que los fagocitos reconozcan y eliminen microorganismos",
+      "Formar poros en la membrana de la célula diana",
+      "Atraer neutrófilos al sitio de infección",
+      "Iniciar la vía clásica"
+    ],
+    c: 0,
+    e: "C3b actúa como opsonina: recubre al microorganismo y facilita su fagocitosis.",
+    h: "El fragmento «b» se queda pegado a la superficie del microbio y actúa como una etiqueta para los fagocitos."
+  },
+  {
+    t: "Complemento",
+    q: "¿Qué fragmento del complemento es una potente anafilotoxina y factor quimiotáctico?",
+    o: ["C3b", "C5a", "C5b", "C9"],
+    c: 1,
+    e: "C5a es una potente anafilotoxina y factor quimiotáctico: atrae células de defensa al sitio de infección.",
+    h: "Es el fragmento pequeño, el que se libera y viaja para atraer células al sitio de la infección."
+  },
+  {
+    t: "Complemento",
+    q: "¿Qué componentes forman el complejo de ataque a la membrana (MAC)?",
+    o: [
+      "C1, C2 y C4",
+      "C3a, C3b y C5a",
+      "C5b, C6, C7, C8 y C9",
+      "Factores B, D, H y properdina"
+    ],
+    c: 2,
+    e: "El MAC está formado por C5b (que inicia el ensamblaje) junto con C6, C7, C8 y C9.",
+    h: "Empieza por el fragmento grande de C5 y termina con varias copias de C9 formando el poro."
+  },
+  {
+    t: "Complemento",
+    q: "¿Qué efecto produce el MAC sobre la célula diana?",
+    o: [
+      "Forma poros en su membrana y puede provocar su lisis",
+      "Favorece su fagocitosis",
+      "Induce fiebre en el organismo",
+      "Bloquea sus receptores de citoquinas"
+    ],
+    c: 0,
+    e: "El MAC forma poros en la membrana de ciertas células y puede provocar su lisis.",
+    h: "Piensa en lo que le ocurre a una célula cuando le perforan la membrana."
+  },
+  {
+    t: "Complemento",
+    q: "¿Qué componentes participan en la vía clásica?",
+    o: ["C1, C2 y C4", "Factores B y D", "MBL y MASP", "C5b, C6, C7, C8 y C9"],
+    c: 0,
+    e: "C1, C2 y C4 son los componentes que participan en la vía clásica del complemento.",
+    h: "Todo empieza cuando C1 reconoce el anticuerpo unido al microbio."
+  },
+  {
+    t: "Complemento",
+    q: "MBL y MASP participan en la vía…",
+    o: ["Clásica", "Alternativa", "De las lectinas", "Común o lítica"],
+    c: 2,
+    e: "La lectina fijadora de manosa (MBL) reconoce carbohidratos microbianos y actúa junto con MASP en la vía de las lectinas.",
+    h: "Su nombre viene de un azúcar: la lectina que reconoce manosa en la superficie microbiana."
+  },
+  {
+    t: "Complemento",
+    q: "¿Cuál de los siguientes es un regulador del sistema del complemento?",
+    o: ["La properdina", "El C1 inhibidor", "La MASP", "El C3b"],
+    c: 1,
+    e: "Entre los reguladores están el C1 inhibidor, DAF/CR1, MCP y el factor I. La properdina, en cambio, participa en la vía alternativa.",
+    h: "Busca el que lleva la palabra «inhibidor»: su trabajo es frenar la activación."
+  },
+  {
+    t: "Complemento",
+    q: "La deficiencia de C3 se ha relacionado con…",
+    o: [
+      "Infecciones recurrentes (por ejemplo, en perros)",
+      "Alergias alimentarias",
+      "Trastornos de la coagulación",
+      "Exceso de lisis de células propias"
+    ],
+    c: 0,
+    e: "Las deficiencias de componentes del complemento pueden predisponer a infecciones recurrentes; la deficiencia de C3 se ha relacionado con infecciones en perros.",
+    h: "Sin C3 no hay opsonización ni MAC: piensa en qué pasaría al no poder eliminar microbios."
+  },
+  {
+    t: "Complemento",
+    q: "¿Cuál de los siguientes NO es un efecto del complemento?",
+    o: [
+      "Lisis de microorganismos o células susceptibles",
+      "Opsonización y facilitación de la fagocitosis",
+      "Neutralización de algunos virus",
+      "Producción de anticuerpos por sí mismo"
+    ],
+    c: 3,
+    e: "El complemento apoya la activación de linfocitos y elimina complejos inmunes, pero no produce anticuerpos: eso lo hacen los linfocitos B.",
+    h: "El complemento ayuda, pero fabricar anticuerpos es tarea de otro tipo de célula."
+  },
+  {
+    t: "Complemento",
+    q: "¿Qué órgano produce la mayor parte de las proteínas del sistema del complemento?",
+    o: ["El hígado", "El riñón", "El bazo", "La médula ósea"],
+    c: 0,
+    e: "El hígado es el principal productor de las proteínas plasmáticas del complemento, aunque también las producen macrófagos y otras células.",
+    h: "Es el mismo órgano que fabrica la albúmina y los factores de coagulación."
+  },
+  {
+    t: "Complemento",
+    q: "¿Cuál de estos fragmentos actúa como anafilotoxina, induciendo la degranulación de mastocitos?",
+    o: ["C3a", "C3b", "C5b", "C9"],
+    c: 0,
+    e: "C3a (junto con C5a) es una anafilotoxina: induce degranulación de mastocitos y liberación de histamina, favoreciendo la inflamación.",
+    h: "Es el fragmento pequeño de C3, el que se libera al activarse el sistema."
+  },
+  {
+    t: "Complemento",
+    q: "¿Qué componente del complemento polimeriza para formar el poro del MAC?",
+    o: ["C5b", "C6", "C8", "C9"],
+    c: 3,
+    e: "El C9 polimeriza formando el poro del complejo de ataque a la membrana, después de que C5b, C6, C7 y C8 se ensamblen en la superficie de la célula diana.",
+    h: "Es el último componente en unirse: muchas copias de él forman el canal."
+  },
+  {
+    t: "Complemento",
+    q: "El déficit hereditario de C1 inhibidor provoca…",
+    o: ["Angioedema hereditario", "Infecciones recurrentes por Neisseria", "Anemia hemolítica", "Alergias alimentarias"],
+    c: 0,
+    e: "El déficit de C1 inhibidor produce angioedema hereditario: activación descontrolada del complemento con edema recurrente en piel y mucosas.",
+    h: "Cursa con episodios de hinchazón en labios, párpados y vías respiratorias."
+  },
+  {
+    t: "Complemento",
+    q: "Además del C3b, ¿cuál de estas moléculas también actúa como opsonina?",
+    o: ["IgG", "C5a", "C9", "MBL"],
+    c: 0,
+    e: "La IgG (y también la IgM en menor medida) actúa como opsonina: recubre al microbio y facilita su fagocitosis, al igual que el C3b.",
+    h: "Es un anticuerpo que se une al microbio y lo marca para los fagocitos."
+  },
+
+  /* ---------- CITOQUINAS ---------- */
+  {
+    t: "Citoquinas",
+    q: "¿Qué son las citoquinas?",
+    o: [
+      "Proteínas pequeñas que funcionan como mensajeros entre las células",
+      "Anticuerpos producidos por los linfocitos B",
+      "Enzimas del sistema del complemento",
+      "Carbohidratos presentes en la superficie microbiana"
+    ],
+    c: 0,
+    e: "Las citoquinas son proteínas pequeñas que actúan como mensajeros y regulan la respuesta inmunitaria, la inflamación y la proliferación celular.",
+    h: "Su nombre lo dice: «cito» (célula) y «quina» (acción, movimiento)."
+  },
+  {
+    t: "Citoquinas",
+    q: "Una citoquina actúa sobre la misma célula que la produce. Esto es una acción…",
+    o: ["Paracrina", "Endocrina", "Autocrina", "Sinérgica"],
+    c: 2,
+    e: "La acción autocrina es sobre la misma célula productora; la paracrina es sobre células cercanas y la endocrina es a distancia por la circulación.",
+    h: "El prefijo «auto» significa «uno mismo»."
+  },
+  {
+    t: "Citoquinas",
+    q: "La acción paracrina significa que la citoquina actúa sobre…",
+    o: [
+      "Células cercanas",
+      "La misma célula que la produce",
+      "Células a distancia, viajando por la circulación",
+      "Los receptores del complemento"
+    ],
+    c: 0,
+    e: "En la acción paracrina la citoquina actúa sobre células vecinas o cercanas.",
+    h: "El prefijo «para» significa «al lado»: piensa en células vecinas."
+  },
+  {
+    t: "Citoquinas",
+    q: "¿Qué propiedad indica que una citoquina puede producir diferentes efectos en distintos tipos celulares?",
+    o: ["Redundancia", "Pleiotropía", "Sinergia", "Antagonismo"],
+    c: 1,
+    e: "Pleiotropía: una misma citoquina puede tener efectos diferentes según el tipo celular sobre el que actúe.",
+    h: "Pleio = varios; tropo = efecto. Una misma molécula, muchos efectos distintos."
+  },
+  {
+    t: "Citoquinas",
+    q: "Varias citoquinas distintas pueden producir un efecto parecido. Esto se llama…",
+    o: ["Pleiotropía", "Sinergia", "Redundancia", "Antagonismo"],
+    c: 2,
+    e: "Redundancia: varias citoquinas diferentes pueden generar un efecto similar.",
+    h: "Es como tener varios caminos distintos para llegar al mismo destino."
+  },
+  {
+    t: "Citoquinas",
+    q: "Dos o más citoquinas actúan juntas y potencian una respuesta. Esto es…",
+    o: ["Sinergia", "Antagonismo", "Redundancia", "Pleiotropía"],
+    c: 0,
+    e: "Sinergia: la acción conjunta de dos o más citoquinas potencia la respuesta.",
+    h: "Viene del griego «synergos»: trabajar juntos y potenciarse."
+  },
+  {
+    t: "Citoquinas",
+    q: "¿Qué citoquina estimula la activación y proliferación de linfocitos T?",
+    o: ["IL-1", "IL-2", "IL-4", "IL-5"],
+    c: 1,
+    e: "La IL-2 estimula la activación y la proliferación de los linfocitos T.",
+    h: "Es la citoquina que los propios linfocitos T producen para poder multiplicarse."
+  },
+  {
+    t: "Citoquinas",
+    q: "¿Qué citoquina favorece la respuesta Th2 y el cambio de clase hacia IgE?",
+    o: ["IL-4", "IL-12", "IFN-γ", "TNF-α"],
+    c: 0,
+    e: "La IL-4 favorece la respuesta Th2 y el cambio de clase hacia IgE.",
+    h: "Se asocia con las alergias y con el anticuerpo que se pega a los mastocitos."
+  },
+  {
+    t: "Citoquinas",
+    q: "¿Qué citoquina estimula los eosinófilos y es importante en la respuesta contra helmintos?",
+    o: ["IL-2", "IL-5", "IL-10", "IL-17"],
+    c: 1,
+    e: "La IL-5 estimula los eosinófilos y es clave en las respuestas contra helmintos.",
+    h: "Su célula diana tiene gránulos que se tiñen de rojo y ataca parásitos grandes."
+  },
+  {
+    t: "Citoquinas",
+    q: "¿Qué citoquina estimula las células NK y favorece la respuesta Th1?",
+    o: ["IL-4", "IL-10", "IL-12", "IL-5"],
+    c: 2,
+    e: "La IL-12 estimula las células NK y favorece la respuesta Th1.",
+    h: "Empuja a los linfocitos hacia el bando Th1 y activa a las células asesinas naturales."
+  },
+  {
+    t: "Citoquinas",
+    q: "¿Qué citoquina tiene función reguladora e inhibe respuestas inflamatorias, incluida la Th1?",
+    o: ["IL-10", "IL-1", "IL-6", "IFN-γ"],
+    c: 0,
+    e: "La IL-10 tiene función reguladora e inhibe respuestas inflamatorias, incluida la Th1.",
+    h: "Es la citoquina del freno: su especialidad es bajar la inflamación."
+  },
+  {
+    t: "Citoquinas",
+    q: "¿Qué citoquina favorece el reclutamiento de neutrófilos frente a bacterias extracelulares y hongos?",
+    o: ["IL-17", "IL-4", "IL-5", "IL-2"],
+    c: 0,
+    e: "La IL-17 favorece el reclutamiento de neutrófilos y es importante frente a bacterias extracelulares y hongos.",
+    h: "Va unida a la familia Th17 y su especialidad es llamar neutrófilos."
+  },
+  {
+    t: "Citoquinas",
+    q: "¿Qué citoquina activa macrófagos y favorece la respuesta Th1?",
+    o: ["IL-10", "IFN-γ", "TNF-α", "IL-6"],
+    c: 1,
+    e: "El IFN-γ activa macrófagos y favorece la respuesta Th1; además tiende a inhibir la Th2.",
+    h: "Es un interferón, pero su especialidad es activar macrófagos."
+  },
+  {
+    t: "Citoquinas",
+    q: "La GM-CSF estimula…",
+    o: [
+      "La producción de glóbulos rojos",
+      "La producción y maduración de granulocitos y macrófagos",
+      "El cambio de clase hacia IgE",
+      "La quimiotaxis de los linfocitos"
+    ],
+    c: 1,
+    e: "La GM-CSF estimula la producción y maduración de granulocitos y macrófagos dentro de la hematopoyesis.",
+    h: "Sus siglas en inglés mencionan directamente a los granulocitos y los macrófagos."
+  },
+  {
+    t: "Citoquinas",
+    q: "¿Qué citoquina participa en la inflamación y en la respuesta de fase aguda?",
+    o: ["IL-6", "IL-4", "IL-5", "IL-10"],
+    c: 0,
+    e: "La IL-6 participa en la inflamación y en la respuesta de fase aguda.",
+    h: "Es la señal que hace que el hígado produzca proteínas de fase aguda."
+  },
+  {
+    t: "Citoquinas",
+    q: "¿Qué hacen las quimiocinas?",
+    o: [
+      "Dirigen el movimiento de las células mediante quimiotaxis",
+      "Forman poros en la membrana de los microorganismos",
+      "Opsonizan microorganismos para la fagocitosis",
+      "Activan la vía clásica del complemento"
+    ],
+    c: 0,
+    e: "Las quimiocinas son citoquinas que dirigen el movimiento celular por quimiotaxis; entre sus familias están CC y CXC.",
+    h: "Su nombre mezcla «quimio» (movimiento) con «cinas» (mensajeros)."
+  },
+  {
+    t: "Citoquinas",
+    q: "La eritropoyetina (EPO) estimula…",
+    o: [
+      "La producción de glóbulos rojos",
+      "La maduración de neutrófilos",
+      "La producción de IgE",
+      "La activación de macrófagos"
+    ],
+    c: 0,
+    e: "La EPO estimula la producción de glóbulos rojos dentro del proceso de hematopoyesis.",
+    h: "Su nombre viene de «eritro», que significa rojo."
+  },
+  {
+    t: "Citoquinas",
+    q: "¿Con qué se relaciona la respuesta Th1?",
+    o: [
+      "Helmintos, eosinófilos y mastocitos",
+      "Inmunidad celular y microorganismos intracelulares",
+      "Producción de IgE y cambio de clase",
+      "Quimiotaxis de neutrófilos"
+    ],
+    c: 1,
+    e: "Th1 se relaciona con la inmunidad celular y la defensa frente a microorganismos intracelulares; favorece la activación de macrófagos y se asocia con IFN-γ.",
+    h: "Es la respuesta especializada en microbios que se esconden dentro de las células."
+  },
+  {
+    t: "Citoquinas",
+    q: "¿Con qué se relaciona la respuesta Th2?",
+    o: [
+      "Microorganismos intracelulares e IFN-γ",
+      "Helmintos, eosinófilos, mastocitos, IL-4 e IL-5",
+      "Activación de macrófagos y células NK",
+      "Formación del complejo de ataque a la membrana"
+    ],
+    c: 1,
+    e: "Th2 participa en la defensa contra helmintos y se relaciona con eosinófilos y mastocitos; sus citoquinas importantes son IL-4, IL-5 e IL-13.",
+    h: "Es la respuesta de los parásitos grandes, los eosinófilos y las alergias."
+  },
+  {
+    t: "Citoquinas",
+    q: "¿Qué citoquina es una pirógena endógena clave, producida por macrófagos activados?",
+    o: ["IL-1", "IL-4", "IL-5", "IL-10"],
+    c: 0,
+    e: "La IL-1 (junto con TNF-α e IL-6) es una pirógena endógena: actúa sobre el hipotálamo produciendo fiebre.",
+    h: "Es una de las citoquinas que provocan fiebre al actuar sobre el hipotálamo."
+  },
+  {
+    t: "Citoquinas",
+    q: "¿Qué citoquina es un mediador central del shock séptico?",
+    o: ["TNF-α", "IL-4", "IL-5", "IL-10"],
+    c: 0,
+    e: "El TNF-α es un mediador clave del shock séptico: produce vasodilatación, aumento de la permeabilidad vascular y daño tisular cuando se libera masivamente.",
+    h: "Su nombre viene de «factor de necrosis tumoral»: a dosis altas causa daño sistémico."
+  },
+  {
+    t: "Citoquinas",
+    q: "¿Qué citoquina favorece la diferenciación de linfocitos T reguladores (Treg)?",
+    o: ["TGF-β", "IL-12", "IFN-γ", "IL-17"],
+    c: 0,
+    e: "El TGF-β (junto con IL-10) favorece la diferenciación de Treg e inhibe la proliferación de linfocitos T efectores, contribuyendo a la tolerancia inmunitaria.",
+    h: "Es una citoquina con efecto antiinflamatorio e inmunosupresor."
+  },
+  {
+    t: "Citoquinas",
+    q: "¿Qué vía de señalización intracelular es característica de muchos receptores de citoquinas?",
+    o: ["JAK-STAT", "La vía del complemento", "La vía de las caspasas", "La vía de la coagulación"],
+    c: 0,
+    e: "Muchos receptores de citoquinas carecen de actividad quinasa propia y se asocian a quinasas JAK, que activan factores de transcripción STAT.",
+    h: "Sus siglas en inglés hablan de quinasas Janus y transductores de señal."
+  },
+  {
+    t: "Citoquinas",
+    q: "¿Qué citoquina se usa terapéuticamente para estimular la producción de neutrófilos?",
+    o: ["G-CSF", "EPO", "IL-4", "IL-10"],
+    c: 0,
+    e: "El G-CSF (factor estimulante de colonias de granulocitos) se usa para estimular la producción de neutrófilos, por ejemplo en pacientes con neutropenia tras quimioterapia.",
+    h: "Sus siglas indican factor estimulante de colonias de granulocitos."
+  }
+];
+
+PREGUNTAS.forEach((item, i) => { item.id = i; });
+
+/* ============================================================
+   CONFIGURACIÓN
+   ============================================================ */
+const PREGUNTAS_POR_QUIZ = 20;   // ← ahora 20 preguntas por intento
+const CLAVE_USADAS = "quiz_complemento_citoquinas_usadas_v2";
+
+const $ = (id) => document.getElementById(id);
+
+function mezclar(lista) {
+  const copia = [...lista];
+  for (let i = copia.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copia[i], copia[j]] = [copia[j], copia[i]];
+  }
+  return copia;
+}
+
+/* ============================================================
+   SONIDOS CON WEB AUDIO API
+   ============================================================ */
+let audioCtx = null;
+
+function getAudioCtx() {
+  if (!audioCtx) {
+    const Ctor = window.AudioContext || window.webkitAudioContext;
+    if (!Ctor) return null;
+    audioCtx = new Ctor();
+  }
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+
+function sonidoCorrecto() {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const notas = [523.25, 659.25, 783.99, 1046.50];
+  notas.forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    const t = ctx.currentTime + i * 0.09;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.22, t + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.32);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.36);
+  });
+  const spark = ctx.createOscillator();
+  const sparkGain = ctx.createGain();
+  spark.type = "triangle";
+  spark.frequency.setValueAtTime(1568, ctx.currentTime + 0.36);
+  spark.frequency.exponentialRampToValueAtTime(2093, ctx.currentTime + 0.5);
+  sparkGain.gain.setValueAtTime(0.0001, ctx.currentTime + 0.36);
+  sparkGain.gain.exponentialRampToValueAtTime(0.14, ctx.currentTime + 0.4);
+  sparkGain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+  spark.connect(sparkGain).connect(ctx.destination);
+  spark.start(ctx.currentTime + 0.36);
+  spark.stop(ctx.currentTime + 0.62);
+}
+
+function sonidoIncorrecto() {
+  const ctx = getAudioCtx();
+  if (!ctx) return;
+  const t0 = ctx.currentTime;
+  [0, 0.18].forEach((desfase, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sawtooth";
+    const inicio = t0 + desfase;
+    osc.frequency.setValueAtTime(i === 0 ? 220 : 190, inicio);
+    osc.frequency.exponentialRampToValueAtTime(90, inicio + 0.22);
+    gain.gain.setValueAtTime(0.0001, inicio);
+    gain.gain.exponentialRampToValueAtTime(0.18, inicio + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, inicio + 0.25);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(inicio);
+    osc.stop(inicio + 0.28);
+  });
+}
+
+/* ============================================================
+   ANIMACIONES
+   ============================================================ */
+const COLORS_CONFETI = ["#60a5fa", "#34d399", "#fbbf24", "#f87171",
+                        "#a78bfa", "#f472b6", "#22c55e", "#fbbf24"];
+
+function lanzarConfeti() {
+  const canvas = $("confettiCanvas");
+  if (!canvas) return;
+  const ctx = canvas.getContext("2d");
+  const dpr = window.devicePixelRatio || 1;
+
+  canvas.width = window.innerWidth * dpr;
+  canvas.height = window.innerHeight * dpr;
+  canvas.style.display = "block";
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  const particulas = [];
+  const cantidad = 130;
+
+  for (let i = 0; i < cantidad; i++) {
+    particulas.push({
+      x: W / 2 + (Math.random() - 0.5) * 260,
+      y: H / 2 + (Math.random() - 0.5) * 120,
+      vx: (Math.random() - 0.5) * 14,
+      vy: -Math.random() * 13 - 5,
+      size: Math.random() * 8 + 4,
+      color: COLORS_CONFETI[Math.floor(Math.random() * COLORS_CONFETI.length)],
+      rot: Math.random() * Math.PI * 2,
+      vrot: (Math.random() - 0.5) * 0.35,
+      vida: 1 + Math.random() * 0.4,
+      forma: Math.random() < 0.35 ? "circulo" : "rect"
+    });
+  }
+
+  let ultimo = performance.now();
+
+  function frame(ahora) {
+    const dt = Math.min((ahora - ultimo) / 1000, 0.05);
+    ultimo = ahora;
+    ctx.clearRect(0, 0, W, H);
+    let activas = false;
+
+    for (const p of particulas) {
+      p.vy += 26 * dt;
+      p.vx *= 0.992;
+      p.x += p.vx;
+      p.y += p.vy;
+      p.rot += p.vrot;
+      p.vida -= dt * 0.55;
+      if (p.vida > 0 && p.y < H + 40) activas = true;
+
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.vida));
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.fillStyle = p.color;
+      if (p.forma === "circulo") {
+        ctx.beginPath();
+        ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 1.6);
+      }
+      ctx.restore();
+    }
+
+    if (activas) requestAnimationFrame(frame);
+    else { ctx.clearRect(0, 0, W, H); canvas.style.display = "none"; }
+  }
+
+  requestAnimationFrame(frame);
+}
+
+function lanzarEquis() {
+  const total = 7;
+  for (let i = 0; i < total; i++) {
+    setTimeout(() => {
+      const el = document.createElement("div");
+      el.className = "fx-x";
+      el.textContent = "✖️";
+      const left = 15 + Math.random() * 70;
+      const top = 35 + Math.random() * 40;
+      el.style.left = left + "vw";
+      el.style.top = top + "vh";
+      const dx = (Math.random() - 0.5) * 120;
+      el.style.setProperty("--dx", dx + "px");
+      el.style.fontSize = (1.8 + Math.random() * 1.6) + "rem";
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 1400);
+    }, i * 70);
+  }
+}
+
+/* ============================================================
+   LÓGICA DEL QUIZ
+   ============================================================ */
+let memoriaUsadas = [];
+
+function leerUsadas() {
+  try {
+    const crudo = localStorage.getItem(CLAVE_USADAS);
+    if (crudo) {
+      const datos = JSON.parse(crudo);
+      if (Array.isArray(datos)) return datos.filter(n => Number.isInteger(n));
+    }
+  } catch (e) { /* sin acceso a localStorage */ }
+  return memoriaUsadas;
+}
+
+function guardarUsadas(ids) {
+  memoriaUsadas = ids;
+  try { localStorage.setItem(CLAVE_USADAS, JSON.stringify(ids)); } catch (e) { /* nada */ }
+}
+
+function construirQuiz() {
+  const usadas = leerUsadas();
+  const sinVer = PREGUNTAS.filter(p => !usadas.includes(p.id));
+
+  if (sinVer.length < PREGUNTAS_POR_QUIZ) {
+    const vistas = PREGUNTAS.filter(p => usadas.includes(p.id));
+    const orden = [...mezclar(sinVer), ...mezclar(vistas)];
+    const seleccion = orden.slice(0, PREGUNTAS_POR_QUIZ);
+    guardarUsadas(seleccion.map(p => p.id));
+    return seleccion.map(prepararPregunta);
+  }
+
+  const seleccion = mezclar(sinVer).slice(0, PREGUNTAS_POR_QUIZ);
+  guardarUsadas([...usadas, ...seleccion.map(p => p.id)]);
+  return seleccion.map(prepararPregunta);
+}
+
+function prepararPregunta(item) {
+  const opciones = item.o.map((texto, i) => ({ texto, correcta: i === item.c }));
+  const mezcladas = mezclar(opciones);
+  return {
+    id: item.id,
+    t: item.t,
+    q: item.q,
+    e: item.e,
+    h: item.h,
+    o: mezcladas.map(o => o.texto),
+    c: mezcladas.findIndex(o => o.correcta)
+  };
+}
+
+function actualizarInfoBanco() {
+  const usadas = leerUsadas();
+  const restantes = PREGUNTAS.length - usadas.length;
+  const el = $("infoBanco");
+  if (!el) return;
+  if (restantes >= PREGUNTAS_POR_QUIZ) {
+    el.textContent = `Banco de ${PREGUNTAS.length} preguntas · te quedan ${restantes} sin ver`;
+  } else {
+    el.textContent = `Banco de ${PREGUNTAS.length} preguntas · quedan ${restantes} sin ver (el ciclo se reiniciará)`;
+  }
+}
+
+let preguntasQuiz = [];
+let indice = 0;
+let aciertos = 0;
+let pistasUsadas = 0;
+let bloqueado = false;
+
+function empezar() {
+  preguntasQuiz = construirQuiz();
+  indice = 0;
+  aciertos = 0;
+  pistasUsadas = 0;
+
+  $("inicio").classList.add("oculto");
+  $("resultado").classList.add("oculto");
+  $("quiz").classList.remove("oculto");
+
+  mostrarPregunta();
+}
+
+function mostrarPregunta() {
+  bloqueado = false;
+  const p = preguntasQuiz[indice];
+  const total = preguntasQuiz.length;
+
+  $("tema").textContent = p.t;
+  $("contador").textContent = `Pregunta ${indice + 1} de ${total}`;
+  $("progreso").style.width = (indice / total) * 100 + "%";
+  $("pregunta").textContent = p.q;
+
+  const contenedor = $("opciones");
+  contenedor.innerHTML = "";
+
+  p.o.forEach((texto, i) => {
+    const btn = document.createElement("button");
+    btn.className = "opcion";
+    btn.type = "button";
+    btn.textContent = texto;
+    btn.addEventListener("click", () => responder(i));
+    contenedor.appendChild(btn);
+  });
+
+  const btnPista = $("btnPista");
+  btnPista.classList.remove("oculto");
+  btnPista.disabled = false;
+  btnPista.textContent = "💡 Ver pista";
+
+  const cajaPista = $("pista");
+  cajaPista.classList.add("oculto");
+  cajaPista.textContent = "";
+
+  const fb = $("feedback");
+  fb.className = "feedback oculto";
+  fb.innerHTML = "";
+
+  const sig = $("btnSiguiente");
+  sig.classList.add("oculto");
+  sig.textContent = indice === total - 1 ? "Ver resultado" : "Siguiente pregunta";
+}
+
+function pedirPista() {
+  if (bloqueado) return;
+  const caja = $("pista");
+  if (!caja.classList.contains("oculto")) return;
+
+  caja.textContent = "💡 " + preguntasQuiz[indice].h;
+  caja.classList.remove("oculto");
+  pistasUsadas++;
+
+  const btn = $("btnPista");
+  btn.disabled = true;
+  btn.textContent = "Pista mostrada";
+}
+
+function responder(elegida) {
+  if (bloqueado) return;
+  bloqueado = true;
+
+  const p = preguntasQuiz[indice];
+  const botones = document.querySelectorAll(".opcion");
+
+  botones.forEach((btn, j) => {
+    btn.disabled = true;
+    if (j === p.c) btn.classList.add("correcta");
+    if (j === elegida && elegida !== p.c) btn.classList.add("incorrecta");
+  });
+
+  $("btnPista").classList.add("oculto");
+
+  const fb = $("feedback");
+
+  if (elegida === p.c) {
+    aciertos++;
+    fb.className = "feedback ok";
+    fb.innerHTML = "<strong>✔ ¡Correcto!</strong> " + p.e;
+    lanzarConfeti();
+    sonidoCorrecto();
+  } else {
+    fb.className = "feedback no";
+    fb.innerHTML = "<strong>✘ Incorrecto.</strong> " + p.e;
+    lanzarEquis();
+    sonidoIncorrecto();
+  }
+
+  $("btnSiguiente").classList.remove("oculto");
+}
+
+function siguiente() {
+  indice++;
+  if (indice >= preguntasQuiz.length) terminar();
+  else mostrarPregunta();
+}
+
+function terminar() {
+  const total = preguntasQuiz.length;
+  const pct = Math.round((aciertos / total) * 100);
+
+  $("quiz").classList.add("oculto");
+  $("resultado").classList.remove("oculto");
+
+  $("puntaje").textContent = `${aciertos} / ${total}  ·  ${pct}%`;
+
+  let mensaje;
+  if (pct >= 90) {
+    mensaje = "¡Excelente! Dominas el sistema del complemento y las citoquinas. 🎉";
+  } else if (pct >= 70) {
+    mensaje = "¡Muy bien! Solo te falta repasar algunos detalles. 👏";
+  } else if (pct >= 50) {
+    mensaje = "Vas por buen camino, pero conviene repasar la guía. 📘";
+  } else {
+    mensaje = "Necesitas repasar la guía y volver a intentarlo. ¡Tú puedes! 💪";
+  }
+  $("mensaje").textContent = mensaje;
+
+  $("detalle").textContent = pistasUsadas === 0
+    ? "No usaste ninguna pista. 🧠"
+    : `Usaste ${pistasUsadas} pista${pistasUsadas === 1 ? "" : "s"} en este intento.`;
+
+  $("barraFinal").style.width = pct + "%";
+
+  actualizarInfoBanco();
+
+  if (pct >= 70) setTimeout(lanzarConfeti, 150);
+}
+
+/* Eventos */
+$("btnEmpezar").addEventListener("click", empezar);
+$("btnSiguiente").addEventListener("click", siguiente);
+$("btnReiniciar").addEventListener("click", empezar);
+$("btnPista").addEventListener("click", pedirPista);
+
+window.addEventListener("resize", () => {
+  const canvas = $("confettiCanvas");
+  if (canvas && canvas.style.display !== "none") {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = window.innerWidth * dpr;
+    canvas.height = window.innerHeight * dpr;
+  }
+});
+
+actualizarInfoBanco();
+</script>
+</body>
+</html>
